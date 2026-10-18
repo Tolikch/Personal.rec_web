@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация — Personal.Rec{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+
+    <div class="hero-content">
+
+        <div class="eyebrow">YOUR PERSONAL ANIME PROFILE</div>
+
+        <h1>
+            Рекомендации,<br>
+            <span>которые знают тебя.</span>
+        </h1>
+
+        <p class="hero-description">
+            Создай аккаунт, чтобы собирать свою коллекцию аниме,
+            сохранять оценки и получать персональные рекомендации
+            на основе собственных предпочтений.
+        </p>
+
+        <div class="search-message">
+            <h2>Регистрация скоро появится</h2>
+
+            <p>
+                Сейчас мы разрабатываем основные возможности Personal.Rec.
+                Регистрация и личная коллекция будут доступны позже.
+            </p>
+        </div>
+
+        <p>
+            <a href="{{ url_for('index') }}" class="login-link">
+                Вернуться к поиску
+            </a>
+        </p>
+
+    </div>
+
+</section>
+
+{% endblock %}

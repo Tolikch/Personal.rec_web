@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Аниме не найдено — Personal.Rec{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <h1>Аниме не найдено</h1>
+        <p class="hero-description">
+            Не удалось найти это произведение в каталоге.
+        </p>
+        <a href="{{ url_for('index') }}" class="recommendation-button">
+            Вернуться к поиску
+        </a>
+    </div>
+</section>
+{% endblock %}

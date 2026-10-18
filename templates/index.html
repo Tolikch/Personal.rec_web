@@ -1,12 +1,118 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal.Rec — Anime Recommendation System</title>
-</head>
-<body>
-    <h1>Personal.Rec</h1>
-    <p>Персональная система анализа и рекомендаций аниме.</p>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Personal.Rec — Поиск аниме{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+
+    <div class="hero-content">
+
+        <div class="eyebrow">
+            YOUR PERSONAL ANIME DISCOVERY
+        </div>
+
+        <h1>
+            Найди аниме,<br>
+            <span>которое тебе понравится.</span>
+        </h1>
+
+        <p class="hero-description">
+            Выбери знакомое произведение и открой для себя
+            новые истории, которые могут тебе понравиться.
+        </p>
+
+        <form action="{{ url_for('search') }}" method="GET" id="search-form">
+
+            <div class="search-modes">
+
+                <label class="mode-option">
+                    <input
+                        type="radio"
+                        name="mode"
+                        value="similar"
+                        checked
+                    >
+
+                    <span class="mode-card">
+                        <span class="mode-title">Похожее аниме</span>
+                        <span class="mode-description">
+                            По выбранному произведению
+                        </span>
+                    </span>
+                </label>
+
+                <label class="mode-option">
+                    <input
+                        type="radio"
+                        name="mode"
+                        value="collection"
+                    >
+
+                    <span class="mode-card">
+                        <span class="mode-title">По моей коллекции</span>
+                        <span class="mode-description">
+                            С учётом твоих оценок
+                        </span>
+                        <span class="mode-badge">PERSONAL</span>
+                    </span>
+                </label>
+
+            </div>
+
+                        <div class="search-box">
+
+                <span class="search-icon" aria-hidden="true">⌕</span>
+
+                <input
+                    type="text"
+                    name="anime"
+                    id="anime-input"
+                    placeholder="Например, Атака титанов..."
+                    autocomplete="off"
+                    required
+                >
+
+                <button type="submit" class="search-button">
+                    Найти
+                    <span aria-hidden="true">→</span>
+                </button>
+
+            </div>
+
+            <div id="anime-results" class="anime-results"></div>
+
+            <input type="hidden" name="anime_id" id="anime-id">
+
+            <p class="search-hint">
+                Введи название аниме, чтобы начать поиск.
+            </p>
+
+        </form>
+
+        {% if search_performed %}
+
+            <div class="search-message">
+                <h2>Поиск подготовлен</h2>
+
+                <p>
+                    Выбранное аниме:
+                    <strong>{{ anime_name }}</strong>
+                </p>
+
+                <p>
+                    Подключение алгоритма рекомендаций появится
+                    на следующем этапе разработки.
+                </p>
+            </div>
+
+        {% endif %}
+
+    </div>
+
+    <div class="hero-decoration decoration-one"></div>
+    <div class="hero-decoration decoration-two"></div>
+
+</section>
+
+{% endblock %}

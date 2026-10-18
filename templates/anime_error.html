@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Ошибка загрузки — Personal.Rec{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <h1>Не удалось загрузить аниме</h1>
+        <p class="hero-description">
+            Каталог временно недоступен. Попробуй ещё раз немного позже.
+        </p>
+        <a href="{{ url_for('index') }}" class="recommendation-button">
+            Вернуться к поиску
+        </a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}{{ anime.display_title or anime.title.english or anime.title.romaji }} — Personal.Rec{% endblock %}
+
+{% block content %}
+
+<section class="anime-page">
+
+    {% if anime.bannerImage %}
+        <div
+            class="anime-banner"
+            style="background-image: url('{{ anime.bannerImage }}')"
+        ></div>
+    {% endif %}
+
+    <div class="anime-page-content">
+
+        <a href="{{ url_for('index') }}" class="back-link">
+            ← Вернуться к поиску
+        </a>
+
+        <div class="anime-details">
+
+            <div class="anime-poster">
+                <img
+                    src="{{ anime.coverImage.extraLarge or anime.coverImage.large }}"
+                    alt="{{ anime.display_title or anime.title.english or anime.title.romaji }}"
+                >
+            </div>
+
+            <div class="anime-info">
+
+                <div class="anime-eyebrow">
+                    PERSONAL.REC · ANIME
+                </div>
+
+                <h1>
+                    {{ anime.display_title or anime.title.english or anime.title.romaji }}
+                </h1>
+
+                {% if anime.title.romaji and anime.title.romaji != anime.title.english %}
+                    <p class="anime-original-title">
+                        {{ anime.title.romaji }}
+                    </p>
+                {% endif %}
+
+                <div class="anime-meta">
+
+                    {% if anime.seasonYear %}
+                        <span>{{ anime.seasonYear }}</span>
+                    {% endif %}
+
+                    {% if anime.format %}
+                        <span>{{ anime.format }}</span>
+                    {% endif %}
+
+                    {% if anime.episodes %}
+                        <span>{{ anime.episodes }} эп.</span>
+                    {% endif %}
+
+                    {% if anime.averageScore %}
+                        <span class="anime-score">
+                            ★ {{ anime.averageScore }}%
+                        </span>
+                    {% endif %}
+
+                </div>
+
+                {% if anime.genres %}
+                    <div class="anime-genres">
+                        {% for genre in anime.genres %}
+                            <span>{{ genre }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if anime.description %}
+                    <div class="anime-description">
+                        {{ anime.description | striptags }}
+                    </div>
+                {% else %}
+                    <p class="anime-description">
+                        Описание пока отсутствует.
+                    </p>
+                {% endif %}
+
+                <form
+                    action="{{ url_for('search') }}"
+                    method="GET"
+                    class="recommendation-form"
+                >
+
+                    <input
+                     type="hidden"
+                     name="anime"
+                     value="{{ anime.display_title or anime.title.english or anime.title.romaji }}"
+                    >
+
+                    <input
+                        type="hidden"
+                        name="anime_id"
+                        value="{{ anime.id }}"
+                    >
+
+                    <input
+                        type="hidden"
+                        name="mode"
+                        value="similar"
+                    >
+
+                    <button type="submit" class="recommendation-button">
+                        Найти похожие
+                        <span aria-hidden="true">→</span>
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+{% endblock %}
