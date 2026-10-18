@@ -274,6 +274,113 @@ h1 span {
     color: var(--text);
 }
 
+.recommendation-notice {
+    color: var(--muted);
+}
+
+.recommendation-grid {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    text-align: left;
+}
+
+.recommendation-card {
+    min-width: 0;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+}
+
+.recommendation-poster {
+    height: 250px;
+    position: relative;
+    background: var(--surface-hover);
+}
+
+.recommendation-poster img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.recommendation-poster-placeholder {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.match-badge {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    padding: 7px 9px;
+    background: rgba(12, 13, 18, 0.88);
+    border: 1px solid rgba(196, 181, 253, 0.35);
+    border-radius: 8px;
+    color: var(--accent-light);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.recommendation-card-info {
+    padding: 14px;
+}
+
+.recommendation-card-info h3 {
+    min-height: 42px;
+    margin: 0;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.recommendation-card-meta {
+    margin-top: 8px;
+    display: flex;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.match-track {
+    height: 5px;
+    margin-top: 12px;
+    overflow: hidden;
+    background: #292c39;
+    border-radius: 10px;
+}
+
+.match-track span {
+    height: 100%;
+    display: block;
+    background: linear-gradient(90deg, #8b5cf6, var(--accent-light));
+    border-radius: inherit;
+}
+
+.recommendation-genres {
+    margin: 10px 0 0;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .hero-decoration {
     position: absolute;
     width: 380px;

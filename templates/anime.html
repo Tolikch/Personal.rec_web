@@ -58,9 +58,9 @@
                         <span>{{ anime.episodes }} эп.</span>
                     {% endif %}
 
-                    {% if anime.averageScore %}
+                    {% if anime.averageScoreOutOf10 is defined and anime.averageScoreOutOf10 is not none %}
                         <span class="anime-score">
-                            ★ {{ anime.averageScore }}%
+                            ★ {{ '%.1f'|format(anime.averageScoreOutOf10) }}/10
                         </span>
                     {% endif %}
 

@@ -83,30 +83,66 @@
             <div id="anime-results" class="anime-results"></div>
 
             <input type="hidden" name="anime_id" id="anime-id">
+            <input type="hidden" name="mal_id" id="mal-id">
 
-            <p class="search-hint">
-                Введи название аниме, чтобы начать поиск.
+            <p class="search-hint" id="search-hint">
+                Введи название, выбери аниме из списка, затем нажми «Найти».
             </p>
 
         </form>
 
+        <div id="recommendation-output" aria-live="polite">
         {% if search_performed %}
 
             <div class="search-message">
-                <h2>Поиск подготовлен</h2>
+                <h2>Похожие аниме</h2>
 
                 <p>
-                    Выбранное аниме:
+                    Алгоритм сравнил жанры для:
                     <strong>{{ anime_name }}</strong>
                 </p>
 
-                <p>
-                    Подключение алгоритма рекомендаций появится
-                    на следующем этапе разработки.
-                </p>
+                <p>Процент показывает оценку алгоритма, насколько вероятно, что аниме тебе понравится.</p>
             </div>
 
+            {% if recommendation_message %}
+                <div class="search-message recommendation-notice">
+                    {{ recommendation_message }}
+                </div>
+            {% endif %}
+
+            {% if recommendations %}
+                <section class="recommendation-grid" aria-label="Похожие аниме">
+                    {% for anime in recommendations %}
+                        <a class="recommendation-card" href="{{ url_for('anime_detail', anime_id=anime.anilist_id) }}">
+                            <div class="recommendation-poster">
+                                {% if anime.image %}
+                                    <img src="{{ anime.image }}" alt="Постер {{ anime.title }}" loading="lazy">
+                                {% else %}
+                                    <div class="recommendation-poster-placeholder">Нет постера</div>
+                                {% endif %}
+                                <span class="match-badge">Вероятность понравиться: {{ anime.match_percent }}%</span>
+                            </div>
+                            <div class="recommendation-card-info">
+                                <h3>{{ anime.title }}</h3>
+                                <div class="recommendation-card-meta">
+                                    {% if anime.year %}<span>{{ anime.year }}</span>{% endif %}
+                                    {% if anime.score is not none %}<span>★ {{ '%.1f'|format(anime.score) }}/10</span>{% endif %}
+                                </div>
+                                <div class="match-track" aria-label="Сходство {{ anime.match_percent }} процентов">
+                                    <span style="width: {{ anime.match_percent }}%"></span>
+                                </div>
+                                {% if anime.genres %}
+                                    <p class="recommendation-genres">{{ anime.genres | join(' · ') }}</p>
+                                {% endif %}
+                            </div>
+                        </a>
+                    {% endfor %}
+                </section>
+            {% endif %}
+
         {% endif %}
+        </div>
 
     </div>
 
