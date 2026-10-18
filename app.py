@@ -12,6 +12,11 @@ app = Flask(__name__)
 def index():
     return render_template("index.html")
 
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
+
 @app.route("/api/anime")
 def anime_autocomplete():
     query = request.args.get("q", "").strip()
