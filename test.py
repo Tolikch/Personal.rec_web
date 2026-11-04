@@ -1,25 +1,19 @@
-from services.anime_search import search_anime
+import pandas as pd
 
+ratings = pd.read_parquet(
+    "data/anilist/ratings.parquet"
+)
 
-queries = [
-    "Атака титанов",
-    "Тетрадь смерти",
-    "Naruto",
-    "Shingeki no Kyojin"
-]
+print("Всего записей:", len(ratings))
+print("Пользователей:", ratings["user_id"].nunique())
+print("Аниме:", ratings["anilist_id"].nunique())
 
-for query in queries:
-    print(f"\nПоиск: {query}")
+print(
+    "Дубликаты:",
+    ratings.duplicated(
+        ["user_id", "anilist_id"]
+    ).sum()
+)
 
-    results = search_anime(query)
-
-    if not results:
-        print("Результатов нет.")
-        continue
-
-    for anime in results:
-        print(
-            f"- {anime['title']} | "
-            f"English: {anime['title_english']} | "
-            f"ID: {anime['mal_id']}"
-        )
+print(ratings.head())
+print(ratings.describe())

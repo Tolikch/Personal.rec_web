@@ -3,7 +3,8 @@ from flask import jsonify
 from services.anime_search import search_anime
 from services.hybrid_recommendation import load_profiles, recommend_for_user
 from services.recommendation_service import find_similar_anime
-from services.anime_catalog import get_anime_by_mal_ids, get_mal_id_by_anilist_id
+from services.anime_catalog import get_anime_by_mal_ids, get_anime_by_anilist_ids, get_mal_id_by_anilist_id
+from services.content_similarity import find_similar_items
 import requests
 app = Flask(__name__)
 
@@ -60,28 +61,83 @@ def recommendations():
     })
 
 
-def _recommendation_cards(mal_id):
-    recommendation_rows = find_similar_anime(mal_id)
-    if recommendation_rows is None:
-        return [], "Выбранное аниме отсутствует в каталоге алгоритма."
+def _fetch_seed_media(anilist_id=None, mal_id=None):
+    # Try to fetch richer metadata from AniList for the seed.
+    if anilist_id and str(anilist_id).isdigit():
+        try:
+            response = requests.post(
+                "https://graphql.anilist.co",
+                json={"query": "query ($id: Int) { Media(id: $id, type: ANIME) { id idMal title { romaji english native } synonyms description(asHtml:false) coverImage { large } seasonYear episodes averageScore genres format } }",
+                      "variables": {"id": int(anilist_id)}},
+                timeout=15,
+            )
+            response.raise_for_status()
+            media = response.json().get("data", {}).get("Media")
+            if media:
+                return media
+        except requests.RequestException:
+            pass
+    if mal_id and str(mal_id).isdigit():
+        try:
+            response = requests.post(
+                "https://graphql.anilist.co",
+                json={"query": "query ($ids: [Int]) { Page(perPage: 1) { media(idMal_in: $ids, type: ANIME) { id idMal title { romaji english native } synonyms description(asHtml:false) coverImage { large } seasonYear episodes averageScore genres format } } }",
+                      "variables": {"ids": [int(mal_id)]}},
+                timeout=15,
+            )
+            response.raise_for_status()
+            media_list = response.json().get("data", {}).get("Page", {}).get("media", [])
+            if media_list:
+                return media_list[0]
+        except requests.RequestException:
+            pass
+    return None
 
-    anime_by_mal_id = get_anime_by_mal_ids(
-        [item["mal_id"] for item in recommendation_rows]
-    )
+
+def _recommendation_cards(anilist_id=None, mal_id=None):
+    seed_media = _fetch_seed_media(anilist_id=anilist_id, mal_id=mal_id)
+    # If seed not found in AniList but mal_id known, try unified catalog item id.
+    seed = seed_media if seed_media else (int(mal_id) if mal_id and str(mal_id).isdigit() else None)
+    if seed is None:
+        return [], "Не удалось получить данные выбранного аниме."
+
+    recommendation_rows = find_similar_items(seed, limit=12)
+    if not recommendation_rows:
+        return [], "Похожие аниме не найдены."
+
+    # Fetch AniList cards for results.
+    mal_ids = [r["mal_id"] for r in recommendation_rows if r.get("mal_id")]
+    anilist_ids = [r["anilist_id"] for r in recommendation_rows if r.get("anilist_id") and not r.get("mal_id")]
+    anime_by_mal = get_anime_by_mal_ids(mal_ids) if mal_ids else {}
+    anime_by_anilist = get_anime_by_anilist_ids(anilist_ids) if anilist_ids else {}
+
     cards = []
     for recommendation in recommendation_rows:
-        anime = anime_by_mal_id.get(recommendation["mal_id"])
+        anime = None
+        if recommendation.get("mal_id") and recommendation["mal_id"] in anime_by_mal:
+            anime = anime_by_mal[recommendation["mal_id"]]
+        elif recommendation.get("anilist_id") and recommendation["anilist_id"] in anime_by_anilist:
+            anime = anime_by_anilist[recommendation["anilist_id"]]
         if not anime:
+            # fallback: use recommendation metadata
+            cards.append({
+                **recommendation,
+                "anilist_id": recommendation.get("anilist_id"),
+                "title": recommendation.get("title"),
+                "image": None,
+                "year": recommendation.get("year"),
+                "score": None,
+                "genres": [],
+            })
             continue
         title = anime.get("title") or {}
         cards.append({
             **recommendation,
             "anilist_id": anime.get("id"),
-            "title": title.get("english") or title.get("romaji") or recommendation["title"],
+            "title": title.get("english") or title.get("romaji") or recommendation.get("title"),
             "image": (anime.get("coverImage") or {}).get("large"),
             "year": anime.get("seasonYear"),
-            "score": round(anime["averageScore"] / 10, 1)
-            if anime.get("averageScore") is not None else None,
+            "score": round(anime["averageScore"] / 10, 1) if anime.get("averageScore") is not None else None,
             "genres": anime.get("genres") or [],
         })
 
@@ -97,9 +153,7 @@ def similar_anime_api():
     try:
         if not mal_id.isdigit() and anime_id.isdigit():
             mal_id = str(get_mal_id_by_anilist_id(anime_id) or "")
-        if not mal_id.isdigit():
-            return jsonify({"error": "Не удалось определить MAL ID выбранного аниме."}), 400
-        cards, message = _recommendation_cards(mal_id)
+        cards, message = _recommendation_cards(anilist_id=anime_id, mal_id=mal_id)
     except FileNotFoundError as error:
         return jsonify({"error": str(error)}), 503
     except requests.RequestException as error:
@@ -127,23 +181,9 @@ def search():
         return redirect(url_for("register"))
 
     try:
-        if not mal_id.isdigit():
-            if not anime_id.isdigit():
-                return redirect(url_for("index"))
+        if not mal_id.isdigit() and anime_id.isdigit():
             mal_id = get_mal_id_by_anilist_id(anime_id)
-        if not mal_id:
-            return render_template(
-                "index.html",
-                anime_name=anime_name,
-                search_performed=True,
-                recommendations=[],
-                recommendation_message=(
-                    "Для этого тайтла AniList не указал MAL ID, "
-                    "поэтому алгоритм каталога не может найти похожие аниме."
-                ),
-            )
-
-        anime_cards, message = _recommendation_cards(mal_id)
+        anime_cards, message = _recommendation_cards(anilist_id=anime_id, mal_id=mal_id)
     except FileNotFoundError as error:
         anime_cards = []
         message = str(error)

@@ -100,6 +100,41 @@ Git. Поэтому на бесплатном Blueprint endpoint `/api/recommend
 `PERSONAL_REC_DATA_DIR` на этот каталог. Загрузка рейтингов в Git не
 рекомендуется: файл крупный, а free-сервис не сохраняет локальные файлы.
 
+## Сбор данных AniList
+
+В проекте есть отдельный модуль `anilist/` для сбора, обработки и подготовки
+данных AniList без изменения исходного Kaggle Dataset и текущей модели
+`stand 0.3`.
+
+Запуск сбора каталога:
+
+```powershell
+.venv\Scripts\Activate.ps1
+python scripts\run_anilist_collect.py --step catalog
+```
+
+Сбор пользовательских списков (нужен файл со списком пользователей):
+
+```powershell
+python scripts\run_anilist_collect.py --step users --users-file data\anilist\users.txt
+```
+
+Построение сопоставления и нормализация:
+
+```powershell
+python scripts\run_anilist_collect.py --step mapping
+python scripts\run_anilist_collect.py --step normalize
+python scripts\run_anilist_collect.py --step finalize
+```
+
+Проверка датасета:
+
+```powershell
+python scripts\validate_anilist_dataset.py
+```
+
+Данные AniList сохраняются в `data/anilist/` и не смешиваются с `data/raw/`.
+
 Проверка состояния после деплоя: открой `https://<имя-сервиса>.onrender.com/health`;
 ожидаемый ответ — `{"status":"ok"}`.
 - Пользовательские ID набора Personal.Rec — это не учётные записи сайта.

@@ -278,8 +278,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (!malId.value) {
-            showMessage("Для этого тайтла отсутствует MAL ID. Выбери другой результат.");
+        if (!animeId.value) {
+            showMessage("Выбери аниме из списка результатов.");
             return;
         }
 

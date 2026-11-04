@@ -69,6 +69,63 @@ def load_profiles():
     return profiles, anime, item_users
 
 
+def get_neighbors(target, profiles, item_users, user_id):
+    target_mean = sum(target.values()) / len(target)
+    candidate_users = set()
+    for anime_id in target:
+        candidate_users.update(item_users.get(anime_id, ()))
+    candidate_users.discard(user_id)
+
+    neighbors = []
+    for other_id in candidate_users:
+        profile = profiles.get(other_id)
+        if not profile:
+            continue
+        common = set(target).intersection(profile)
+        if len(common) < 3:
+            continue
+        similarity = cosine_similarity(target, profile, common=common)
+        if similarity < MIN_SIMILARITY:
+            continue
+        adjusted = similarity * len(common) / (len(common) + SHRINKAGE_LAMBDA)
+        neighbors.append((other_id, adjusted, profile))
+
+    neighbors.sort(key=lambda item: item[1], reverse=True)
+    return neighbors[:NEIGHBOR_LIMIT], target_mean
+
+
+def predict_with_neighbors(target, item_id, neighbors, target_mean):
+    if item_id in target:
+        return None
+    score_sum = 0.0
+    weight_sum = 0.0
+    for other_id, sim, profile in neighbors:
+        other_mean = sum(profile.values()) / len(profile)
+        if item_id in profile:
+            score_sum += sim * (profile[item_id] - other_mean)
+            weight_sum += sim
+    if weight_sum <= 0:
+        return None
+    prediction = target_mean + score_sum / (weight_sum + SMOOTHING)
+    prediction = max(1.0, min(10.0, prediction))
+    return prediction
+
+
+def predict_rating(user_id, item_id, profiles, anime, item_users):
+    """Predict a single rating for (user, item) using the hybrid CF logic."""
+    user_id = int(user_id)
+    item_id = int(item_id)
+    target = profiles.get(user_id)
+    if not target or item_id in target:
+        return None
+    if item_id not in anime.index:
+        return None
+    neighbors, target_mean = get_neighbors(target, profiles, item_users, user_id)
+    if not neighbors:
+        return None
+    return predict_with_neighbors(target, item_id, neighbors, target_mean)
+
+
 def recommend_for_user(user_id, profiles, anime, item_users, limit=DEFAULT_LIMIT):
     """Return neighbor-based predictions for a filtered source-dataset profile."""
     user_id = int(user_id)
@@ -76,55 +133,36 @@ def recommend_for_user(user_id, profiles, anime, item_users, limit=DEFAULT_LIMIT
     if not target:
         return None
 
-    target_mean = sum(target.values()) / len(target)
-    candidates = set()
-    neighbors = []
-
-    candidate_users = set()
-    for anime_id in target:
-        candidate_users.update(item_users.get(anime_id, ()))
-    candidate_users.discard(user_id)
-
-    for other_id in candidate_users:
-        profile = profiles[other_id]
-        common = set(target).intersection(profile)
-        if len(common) < 3:
-            continue
-        similarity = cosine_similarity(target, profile, common=common)
-        if similarity < MIN_SIMILARITY:
-            continue
-        adjusted = similarity * len(common) / (
-            len(common) + SHRINKAGE_LAMBDA
-        )
-        neighbors.append((other_id, adjusted))
-
-    neighbors.sort(key=lambda item: item[1], reverse=True)
-    neighbors = neighbors[:NEIGHBOR_LIMIT]
+    neighbors, target_mean = get_neighbors(target, profiles, item_users, user_id)
     if not neighbors:
         return []
 
-    scores = defaultdict(float)
-    weights = defaultdict(float)
-    supporters = defaultdict(int)
-    for other_id, similarity in neighbors:
-        profile = profiles[other_id]
-        other_mean = sum(profile.values()) / len(profile)
+    candidates = set()
+    for other_id, similarity, profile in neighbors:
         for anime_id, rating in profile.items():
             if anime_id in target:
                 continue
             candidates.add(anime_id)
+
+    recommendations = []
+    supporters = defaultdict(int)
+    scores = defaultdict(float)
+    weights = defaultdict(float)
+    for other_id, similarity, profile in neighbors:
+        other_mean = sum(profile.values()) / len(profile)
+        for anime_id, rating in profile.items():
+            if anime_id in target:
+                continue
             scores[anime_id] += similarity * (rating - other_mean)
             weights[anime_id] += similarity
             supporters[anime_id] += 1
 
-    recommendations = []
     for anime_id in candidates:
         if weights[anime_id] <= 0:
             continue
-        prediction = target_mean + scores[anime_id] / (
-            weights[anime_id] + SMOOTHING
-        )
-        prediction = max(1.0, min(10.0, prediction))
+        prediction = predict_with_neighbors(target, anime_id, neighbors, target_mean)
+        if prediction is None:
+            continue
         confidence_adjusted = prediction * supporters[anime_id] / (
             supporters[anime_id] + SMOOTHING
         )

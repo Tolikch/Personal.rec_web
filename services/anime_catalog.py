@@ -56,3 +56,34 @@ def get_anime_by_mal_ids(anime_ids):
     response.raise_for_status()
     media = response.json().get("data", {}).get("Page", {}).get("media", [])
     return {int(anime["idMal"]): anime for anime in media if anime.get("idMal")}
+
+
+ANILIST_BY_IDS_QUERY = """
+query ($ids: [Int]) {
+    Page(perPage: 30) {
+        media(id_in: $ids, type: ANIME) {
+            id
+            idMal
+            title { romaji english native }
+            coverImage { large }
+            seasonYear
+            averageScore
+            genres
+        }
+    }
+}
+"""
+
+
+def get_anime_by_anilist_ids(anilist_ids):
+    anilist_ids = [int(x) for x in anilist_ids[:30]]
+    if not anilist_ids:
+        return {}
+    response = requests.post(
+        API_URL,
+        json={"query": ANILIST_BY_IDS_QUERY, "variables": {"ids": anilist_ids}},
+        timeout=20,
+    )
+    response.raise_for_status()
+    media = response.json().get("data", {}).get("Page", {}).get("media", [])
+    return {int(anime["id"]): anime for anime in media if anime.get("id")}
